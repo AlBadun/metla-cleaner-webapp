@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>METLA Cleaner - Support</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --void-space: #0B0D17;
+            --deep-surface: rgba(21, 26, 39, 0.6);
+            --surface-stroke: rgba(31, 37, 56, 0.5);
+            --aqua-core: #00F0C8;
+            --aqua-glow: rgba(0, 240, 200, 0.4);
+            --electric-violet: #9966CC;
+            --violet-glow: rgba(153, 102, 204, 0.4);
+            --saffron-accent: #FFD166;
+            --neon-flamingo: #FF6B9D;
+            --text-primary: #F0F3FA;
+            --text-secondary: #9BA4B5;
+            --text-hint: #5A6475;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0B0D17 0%, #151A27 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            animation: float 12s ease-in-out infinite;
+        }
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, var(--electric-violet), var(--aqua-core));
+            opacity: 0.08;
+            top: -100px;
+            right: -100px;
+        }
+        .blob-2 {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, var(--aqua-core), var(--electric-violet));
+            opacity: 0.06;
+            bottom: 10%;
+            left: -100px;
+            animation-delay: -6s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, 50px) rotate(120deg); }
+            66% { transform: translate(-20px, 30px) rotate(240deg); }
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .pulsar-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .pulsar-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 28px;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+            background: linear-gradient(90deg, 
+                #00F0C8 0%, 
+                #4DD9B8 30%, 
+                #7B8FD9 60%, 
+                #9966CC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+        }
+
+        .header p {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .lang-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .lang-btn {
+            background: rgba(0, 240, 200, 0.1);
+            border: 1px solid rgba(0, 240, 200, 0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--aqua-core);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-btn:hover {
+            background: rgba(0, 240, 200, 0.2);
+            border-color: var(--aqua-core);
+            box-shadow: 0 0 15px rgba(0, 240, 200, 0.3);
+        }
+
+        .lang-btn.active {
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border-color: transparent;
+            color: var(--void-space);
+            box-shadow: 0 0 20px rgba(0, 240, 200, 0.4);
+        }
+
+        .glass-card {
+            background: var(--deep-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:active,
+        .stat-item:active,
+        .ticket-item:active {
+            transform: scale(0.98);
+            border-color: rgba(0, 240, 200, 0.4);
+            background: rgba(0, 240, 200, 0.05);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 20px 16px;
+            text-align: center;
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 240, 200, 0.3), transparent);
+        }
+
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .stat-value.aqua { 
+            color: var(--aqua-core); 
+            text-shadow: 0 0 30px var(--aqua-glow);
+        }
+        .stat-value.violet { 
+            color: var(--electric-violet); 
+            text-shadow: 0 0 30px var(--violet-glow);
+        }
+        .stat-value.saffron { 
+            color: var(--saffron-accent);
+            text-shadow: 0 0 20px rgba(255, 209, 102, 0.4);
+        }
+        .stat-value.flamingo { 
+            color: var(--neon-flamingo);
+            text-shadow: 0 0 20px rgba(255, 107, 157, 0.4);
+        }
+        
+        .stat-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 220px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .progress-block {
+            margin-top: 8px;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border-radius: 3px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 15px var(--aqua-glow);
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--aqua-core);
+            margin: 28px 0 12px 0;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .status-tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .status-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .status-tab {
+            flex: 0 0 auto;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-stroke);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .status-tab:hover {
+            border-color: rgba(0, 240, 200, 0.3);
+            background: rgba(0, 240, 200, 0.05);
+        }
+        .status-tab.active {
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border-color: transparent;
+            color: var(--void-space);
+            box-shadow: 0 4px 15px rgba(0, 240, 200, 0.3);
+        }
+
+        .ticket-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .ticket-item:hover {
+            background: rgba(0, 240, 200, 0.05);
+            border-color: rgba(0, 240, 200, 0.3);
+        }
+
+        .ticket-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .ticket-info span {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--text-hint);
+        }
+        
+        .status-chip {
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid;
+        }
+        .status-open {
+            background: rgba(0, 240, 200, 0.1);
+            color: var(--aqua-core);
+            border-color: rgba(0, 240, 200, 0.3);
+        }
+        .status-progress {
+            background: rgba(153, 102, 204, 0.1);
+            color: var(--electric-violet);
+            border-color: rgba(153, 102, 204, 0.3);
+        }
+        .status-resolved {
+            background: rgba(255, 209, 102, 0.1);
+            color: var(--saffron-accent);
+            border-color: rgba(255, 209, 102, 0.3);
+        }
+        .status-closed {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-hint);
+            border-color: var(--surface-stroke);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 28px;
+            margin-bottom: 40px;
+        }
+
+        .action-btn {
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border: none;
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--void-space);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 240, 200, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 240, 200, 0.4);
+        }
+
+        .action-btn:active {
+            transform: scale(0.96) translateY(0);
+        }
+
+        .action-btn.secondary {
+            background: transparent;
+            border: 1px solid var(--surface-stroke);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .action-btn.secondary:hover {
+            border-color: rgba(0, 240, 200, 0.3);
+            background: rgba(0, 240, 200, 0.05);
+        }
+
+        .loader {
+            text-align: center;
+            padding: 60px 20px;
+            font-family: 'Space Mono', monospace;
+            color: var(--aqua-core);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hidden { display: none !important; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 13, 23, 0.95);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            color: var(--aqua-core);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .faq-item {
+            background: var(--deep-surface);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .faq-item h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            color: var(--aqua-core);
+            margin-bottom: 8px;
+        }
+
+        .faq-item p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .ticket-conversation {
+            background: var(--deep-surface);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .ticket-conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--surface-stroke);
+        }
+
+        .ticket-conversation-header h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            color: var(--aqua-core);
+        }
+
+        .message {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            word-wrap: break-word;
+        }
+
+        .message-user {
+            background: rgba(0, 240, 200, 0.1);
+            border: 1px solid rgba(0, 240, 200, 0.2);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-admin {
+            background: rgba(153, 102, 204, 0.1);
+            border: 1px solid rgba(153, 102, 204, 0.2);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .message-time {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--text-hint);
+            text-align: right;
+        }
+
+        .no-messages {
+            text-align: center;
+            color: var(--text-hint);
+            padding: 40px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-textarea:focus {
+            border-color: var(--aqua-core);
+            background: rgba(0, 240, 200, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 240, 200, 0.1);
+        }
+
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            min-height: 52px;
+        }
+
+        .custom-select-trigger:hover {
+            border-color: rgba(0, 240, 200, 0.3);
+            background: rgba(0, 240, 200, 0.03);
+        }
+
+        .custom-select-trigger.active {
+            border-color: var(--aqua-core);
+            background: rgba(0, 240, 200, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 240, 200, 0.1);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .custom-select-trigger::after {
+            content: '';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-right: 2px solid var(--aqua-core);
+            border-bottom: 2px solid var(--aqua-core);
+            transition: transform 0.3s ease;
+        }
+
+        .custom-select-trigger.active::after {
+            transform: translateY(-70%) rotate(180deg);
+        }
+
+        .custom-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(11, 13, 23, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            overflow: hidden;
+            z-index: 100;
+            max-height: 0;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .custom-select-options.active {
+            max-height: 300px;
+            opacity: 1;
+        }
+
+        .custom-select-option {
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(31, 37, 56, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .custom-select-option:last-child {
+            border-bottom: none;
+        }
+
+        .custom-select-option:hover {
+            background: rgba(0, 240, 200, 0.08);
+            padding-left: 20px;
+        }
+
+        .custom-select-option.selected {
+            background: linear-gradient(90deg, rgba(0, 240, 200, 0.15), rgba(153, 102, 204, 0.15));
+            color: var(--aqua-core);
+        }
+
+        .custom-select-option.selected::after {
+            content: '✓';
+            color: var(--aqua-core);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .priority-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .priority-btn {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-stroke);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .priority-btn:hover {
+            border-color: rgba(0, 240, 200, 0.3);
+            background: rgba(0, 240, 200, 0.05);
+        }
+
+        .priority-btn.active {
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border-color: transparent;
+            color: var(--void-space);
+            box-shadow: 0 4px 15px rgba(0, 240, 200, 0.3);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--aqua-core), var(--electric-violet));
+            border: none;
+            border-radius: 16px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--void-space);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 240, 200, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 240, 200, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98) translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-message h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            color: var(--aqua-core);
+            margin-bottom: 12px;
+        }
+
+        .success-message p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .action-btn.secondary.file-attach-btn {
+            width: 100%;
+            margin-top: 8px;
+            position: relative;
+            z-index: 10;
+        }
+
+        #filePreview {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 240, 200, 0.05);
+            border: 1px solid rgba(0, 240, 200, 0.2);
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeIn 0.3s ease;
+        }
+
+        #filePreview.show {
+            display: flex;
+        }
+
+        @media (max-width: 480px) {
+            .stat-value { font-size: 28px; }
+            .header h1 { font-size: 24px; }
+            .lang-switcher { top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <div class="lang-switcher">
+        <button class="lang-btn" data-lang="ru" onclick="switchLanguage('ru')">RU</button>
+        <button class="lang-btn" data-lang="en" onclick="switchLanguage('en')">EN</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="pulsar-container">
+                <canvas id="pulsarCanvas" class="pulsar-canvas"></canvas>
+            </div>
+            <h1 data-i18n="app_title">METLA</h1>
+            <p data-i18n="app_subtitle">Панель поддержки</p>
+        </div>
+
+        <div id="loader" class="loader" data-i18n="loading">ЗАГРУЗКА ДАННЫХ...</div>
+
+        <div id="content" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value aqua" id="stat-total">0</div>
+                    <div class="stat-label" data-i18n="stat_total">Всего</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value violet" id="stat-open">0</div>
+                    <div class="stat-label" data-i18n="stat_open">Открыто</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value saffron" id="stat-resolved">0</div>
+                    <div class="stat-label" data-i18n="stat_resolved">Решено</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value flamingo" id="stat-avg">0ч</div>
+                    <div class="stat-label" data-i18n="stat_avg_response">Ср. ответ</div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="margin-top: 16px;">
+                <div class="section-title" data-i18n="avg_rating_title">Средняя оценка</div>
+                <div style="text-align: center; font-size: 28px; font-weight: 700; color: var(--aqua-core); margin: 16px 0;">
+                    <span id="avg-rating">0</span> / 5
+                </div>
+                <div style="text-align: center; font-size: 13px; color: var(--text-secondary);">
+                    <span data-i18n="based_on_ratings">На основании</span> <span id="rating-count">0</span> <span data-i18n="ratings_word">оценок</span>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="section-title" style="margin-top: 0; text-align: center;" data-i18n="distribution">Распределение</div>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card progress-block">
+                <div class="progress-header">
+                    <span data-i18n="close_efficiency">Эффективность закрытия</span>
+                    <span id="progress-text" style="color: var(--aqua-core); font-family: 'Space Mono';">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="section-title" data-i18n="recent_tickets">Последние обращения</div>
+            
+            <div class="status-tabs" id="statusTabs">
+                <button class="status-tab active" data-status="all" onclick="setFilter('all')">
+                    <span data-i18n="filter_all">Все</span> (<span id="count-all">0</span>)
+                </button>
+                <button class="status-tab" data-status="open" onclick="setFilter('open')">
+                    <span data-i18n="filter_open">Открытые</span> (<span id="count-open">0</span>)
+                </button>
+                <button class="status-tab" data-status="in_progress" onclick="setFilter('in_progress')">
+                    <span data-i18n="filter_in_progress">В работе</span> (<span id="count-in_progress">0</span>)
+                </button>
+                <button class="status-tab" data-status="resolved" onclick="setFilter('resolved')">
+                    <span data-i18n="filter_resolved">Решённые</span> (<span id="count-resolved">0</span>)
+                </button>
+                <button class="status-tab" data-status="closed" onclick="setFilter('closed')">
+                    <span data-i18n="filter_closed">Закрытые</span> (<span id="count-closed">0</span>)
+                </button>
+            </div>
+
+            <div id="tickets-list"></div>
+            
+            <button id="loadMoreBtn" class="action-btn secondary hidden" onclick="loadMoreTickets()" style="width: 100%; margin-top: 12px;" data-i18n="btn_load_more">Показать ещё</button>
+
+            <div class="actions-grid">
+                <button class="action-btn" onclick="openNewTicketModal()" data-i18n="btn_new_ticket">Новый тикет</button>
+                <button class="action-btn secondary" onclick="openFAQ()" data-i18n="btn_faq">FAQ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно FAQ -->
+    <div id="faqModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="faq_title">FAQ</h2>
+                <button class="modal-close" onclick="closeFAQ()">✕</button>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_q1">Как очистить кэш?</h3>
+                <p data-i18n="faq_a1">Откройте раздел 'Память' в главном меню приложения, нажмите 'Сканировать', затем 'Очистить'. METLA автоматически удалит временные файлы.</p>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_q2">Как восстановить файл из карантина?</h3>
+                <p data-i18n="faq_a2">Перейдите в 'Профиль' → 'Карантин'. Там вы увидите удаленные файлы. Нажмите на нужный файл и выберите 'Восстановить'.</p>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_q3">Почему не работает поиск дубликатов?</h3>
+                <p data-i18n="faq_a3">Убедитесь, что приложению выдан 'Полный доступ к файлам' (MANAGE_EXTERNAL_STORAGE). Без этого доступа поиск дубликатов ограничен системой Android.</p>
+            </div>
+            <div class="faq-item">
+                <h3 data-i18n="faq_q4">Как связаться с поддержкой?</h3>
+                <p data-i18n="faq_a4">Нажмите кнопку 'Новый тикет' или напишите в Telegram бот @METLA_support_bot. Мы ответим в течение 24 часов.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра тикета -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="ticketModalTitle" data-i18n="ticket">Тикет</h2>
+                <button class="modal-close" onclick="closeTicketModal()">✕</button>
+            </div>
+            <div id="ticketConversation" class="ticket-conversation">
+                <div class="loader" data-i18n="loading_messages">Загрузка переписки...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания нового тикета -->
+    <div id="newTicketModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="new_ticket_title">Новый тикет</h2>
+                <button class="modal-close" onclick="closeNewTicketModal()">✕</button>
+            </div>
+            
+            <div id="newTicketForm">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="label_category">Категория</label>
+                    <div class="custom-select" id="categorySelect">
+                        <div class="custom-select-trigger" id="categoryTrigger" data-value="question">
+                            <span data-i18n="cat_question">Вопрос</span>
+                        </div>
+                        <div class="custom-select-options" id="categoryOptions">
+                            <div class="custom-select-option selected" data-value="question" data-i18n="cat_question">Вопрос</div>
+                            <div class="custom-select-option" data-value="bug" data-i18n="cat_bug">Баг/Ошибка</div>
+                            <div class="custom-select-option" data-value="feature" data-i18n="cat_feature">Предложение</div>
+                            <div class="custom-select-option" data-value="other" data-i18n="cat_other">Другое</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="label_priority">Приоритет</label>
+                    <div class="priority-buttons">
+                        <div class="priority-btn" data-priority="low" onclick="selectPriority('low')" data-i18n="pri_low">Низкий</div>
+                        <div class="priority-btn active" data-priority="normal" onclick="selectPriority('normal')" data-i18n="pri_normal">Обычный</div>
+                        <div class="priority-btn" data-priority="high" onclick="selectPriority('high')" data-i18n="pri_high">Высокий</div>
+                        <div class="priority-btn" data-priority="urgent" onclick="selectPriority('urgent')" data-i18n="pri_urgent">🔴 Срочно</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="label_description">Описание проблемы</label>
+                    <textarea class="form-textarea" id="ticketMessage" data-i18n-placeholder="placeholder_description" placeholder="Опишите вашу проблему подробно..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="label_attachment">Прикрепить файл (до 20 МБ)</label>
+                    <input type="file" id="fileInput" accept="image/jpeg, image/png, application/pdf" style="display: none;" onchange="handleFileSelect(this)">
+                    <button type="button" class="action-btn secondary file-attach-btn" onclick="document.getElementById('fileInput').click()">
+                        📎 <span data-i18n="btn_attach_file">Выбрать файл</span>
+                    </button>
+                    <div id="filePreview">
+                        <span id="fileName" style="font-size: 13px; color: var(--text-primary); font-family: 'Space Mono'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"></span>
+                        <button type="button" onclick="removeFile()" style="background: none; border: none; color: var(--neon-flamingo); cursor: pointer; font-size: 18px; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">✕</button>
+                    </div>
+                </div>
+
+                <button class="submit-btn" onclick="submitTicket()" id="submitBtn" data-i18n="btn_create_ticket">
+                    Создать тикет
+                </button>
+            </div>
+
+            <div id="successMessage" class="success-message hidden">
+                <h3>✅ <span data-i18n="ticket_created">Тикет создан!</span></h3>
+                <p><span data-i18n="ticket_created_desc">Ваш тикет #</span><span id="createdTicketId"></span><span data-i18n="ticket_created_desc_end"> успешно создан. Мы ответим вам в ближайшее время.</span></p>
+                <button class="submit-btn" onclick="closeNewTicketModal()" data-i18n="btn_close">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== СИСТЕМА ПЕРЕВОДОВ ==========
+        const translations = {
+            ru: {
+                app_title: 'METLA',
+                app_subtitle: 'Панель поддержки',
+                loading: 'ЗАГРУЗКА ДАННЫХ...',
+                stat_total: 'Всего',
+                stat_open: 'Открыто',
+                stat_resolved: 'Решено',
+                stat_avg_response: 'Ср. ответ',
+                avg_rating_title: 'Средняя оценка',
+                based_on_ratings: 'На основании',
+                ratings_word: 'оценок',
+                distribution: 'Распределение',
+                close_efficiency: 'Эффективность закрытия',
+                recent_tickets: 'Последние обращения',
+                btn_new_ticket: 'Новый тикет',
+                btn_faq: 'FAQ',
+                faq_title: 'FAQ',
+                faq_q1: 'Как очистить кэш?',
+                faq_a1: 'Откройте раздел \'Память\' в главном меню приложения, нажмите \'Сканировать\', затем \'Очистить\'. METLA автоматически удалит временные файлы.',
+                faq_q2: 'Как восстановить файл из карантина?',
+                faq_a2: 'Перейдите в \'Профиль\' → \'Карантин\'. Там вы увидите удаленные файлы. Нажмите на нужный файл и выберите \'Восстановить\'.',
+                faq_q3: 'Почему не работает поиск дубликатов?',
+                faq_a3: 'Убедитесь, что приложению выдан \'Полный доступ к файлам\' (MANAGE_EXTERNAL_STORAGE). Без этого доступа поиск дубликатов ограничен системой Android.',
+                faq_q4: 'Как связаться с поддержкой?',
+                faq_a4: 'Нажмите кнопку \'Новый тикет\' или напишите в Telegram бот @METLA_support_bot. Мы ответим в течение 24 часов.',
+                ticket: 'Тикет',
+                loading_messages: 'Загрузка переписки...',
+                new_ticket_title: 'Новый тикет',
+                label_category: 'Категория',
+                label_priority: 'Приоритет',
+                label_description: 'Описание проблемы',
+                placeholder_description: 'Опишите вашу проблему подробно...',
+                btn_create_ticket: 'Создать тикет',
+                ticket_created: 'Тикет создан!',
+                ticket_created_desc: 'Ваш тикет #',
+                ticket_created_desc_end: ' успешно создан. Мы ответим вам в ближайшее время.',
+                btn_close: 'Закрыть',
+                cat_question: 'Вопрос',
+                cat_bug: 'Баг/Ошибка',
+                cat_feature: 'Предложение',
+                cat_other: 'Другое',
+                pri_low: 'Низкий',
+                pri_normal: 'Обычный',
+                pri_high: 'Высокий',
+                pri_urgent: '🔴 Срочно',
+                no_tickets: 'Нет активных обращений',
+                no_messages: 'Нет сообщений',
+                error_loading_messages: 'Ошибка загрузки переписки',
+                alert_no_description: 'Пожалуйста, опишите вашу проблему',
+                creating: 'Создание...',
+                error_creating: 'Ошибка создания тикета. Попробуйте позже.',
+                status_open: 'Открыт',
+                status_in_progress: 'В работе',
+                status_resolved: 'Решен',
+                status_closed: 'Закрыт',
+                btn_load_more: 'Показать ещё',
+                loading_more: 'Загрузка...',
+                filter_all: 'Все',
+                filter_open: 'Открытые',
+                filter_in_progress: 'В работе',
+                filter_resolved: 'Решённые',
+                filter_closed: 'Закрытые',
+                label_attachment: 'Прикрепить файл (до 20 МБ)',
+                btn_attach_file: 'Выбрать файл',
+                error_file_too_large: 'Файл слишком большой. Максимальный размер — 20 МБ.'
+            },
+            en: {
+                app_title: 'METLA',
+                app_subtitle: 'Support Panel',
+                loading: 'LOADING DATA...',
+                stat_total: 'Total',
+                stat_open: 'Open',
+                stat_resolved: 'Resolved',
+                stat_avg_response: 'Avg. response',
+                avg_rating_title: 'Average rating',
+                based_on_ratings: 'Based on',
+                ratings_word: 'ratings',
+                distribution: 'Distribution',
+                close_efficiency: 'Close efficiency',
+                recent_tickets: 'Recent tickets',
+                btn_new_ticket: 'New Ticket',
+                btn_faq: 'FAQ',
+                faq_title: 'FAQ',
+                faq_q1: 'How to clear cache?',
+                faq_a1: 'Open \'Storage\' section in the main menu, tap \'Scan\', then \'Clean\'. METLA will automatically remove temporary files.',
+                faq_q2: 'How to restore a file from quarantine?',
+                faq_a2: 'Go to \'Profile\' → \'Quarantine\'. You will see deleted files there. Tap the file you need and select \'Restore\'.',
+                faq_q3: 'Why doesn\'t duplicate search work?',
+                faq_a3: 'Make sure the app has \'Full access to files\' (MANAGE_EXTERNAL_STORAGE). Without this permission, duplicate search is limited by Android system.',
+                faq_q4: 'How to contact support?',
+                faq_a4: 'Tap \'New Ticket\' button or write to Telegram bot @METLA_support_bot. We will reply within 24 hours.',
+                ticket: 'Ticket',
+                loading_messages: 'Loading messages...',
+                new_ticket_title: 'New Ticket',
+                label_category: 'Category',
+                label_priority: 'Priority',
+                label_description: 'Problem description',
+                placeholder_description: 'Describe your problem in detail...',
+                btn_create_ticket: 'Create Ticket',
+                ticket_created: 'Ticket Created!',
+                ticket_created_desc: 'Your ticket #',
+                ticket_created_desc_end: ' has been successfully created. We will reply to you soon.',
+                btn_close: 'Close',
+                cat_question: 'Question',
+                cat_bug: 'Bug/Error',
+                cat_feature: 'Feature Request',
+                cat_other: 'Other',
+                pri_low: 'Low',
+                pri_normal: 'Normal',
+                pri_high: 'High',
+                pri_urgent: ' Urgent',
+                no_tickets: 'No active tickets',
+                no_messages: 'No messages',
+                error_loading_messages: 'Error loading messages',
+                alert_no_description: 'Please describe your problem',
+                creating: 'Creating...',
+                error_creating: 'Error creating ticket. Try again later.',
+                status_open: 'Open',
+                status_in_progress: 'In Progress',
+                status_resolved: 'Resolved',
+                status_closed: 'Closed',
+                btn_load_more: 'Load more',
+                loading_more: 'Loading...',
+                filter_all: 'All',
+                filter_open: 'Open',
+                filter_in_progress: 'In Progress',
+                filter_resolved: 'Resolved',
+                filter_closed: 'Closed',
+                label_attachment: 'Attach file (up to 20 MB)',
+                btn_attach_file: 'Choose file',
+                error_file_too_large: 'File is too large. Maximum size is 20 MB.'
+            }
+        };
+
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#0B0D17');
+        tg.setBackgroundColor('#0B0D17');
+
+        let currentLang = localStorage.getItem('metla_lang') || 
+                          tg.initDataUnsafe?.user?.language_code || 
+                          navigator.language.split('-')[0] || 
+                          'en';
+        currentLang = (currentLang === 'ru' || currentLang === 'uk' || currentLang === 'be') ? 'ru' : 'en';
+
+        function t(key) {
+            return translations[currentLang][key] || translations['en'][key] || key;
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const translation = t(key);
+                if (translation && el) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translation;
+                    } else {
+                        el.textContent = translation;
+                    }
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                const translation = t(key);
+                if (translation && el) {
+                    el.placeholder = translation;
+                }
+            });
+
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                const key = btn.getAttribute('data-i18n');
+                if (key && btn) {
+                    const translation = t(key);
+                    if (translation) btn.textContent = translation;
+                }
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.lang === currentLang) {
+                    btn.classList.add('active');
+                }
+            });
+
+            updateCustomSelectTranslation();
+        }
+
+        function updateCustomSelectTranslation() {
+            const trigger = document.getElementById('categoryTrigger');
+            if (trigger) {
+                const value = trigger.getAttribute('data-value');
+                const text = t('cat_' + value);
+                trigger.innerHTML = `<span>${text}</span>`;
+            }
+
+            document.querySelectorAll('.custom-select-option').forEach(opt => {
+                const key = opt.getAttribute('data-i18n');
+                if (key) {
+                    const translation = t(key);
+                    if (translation) {
+                        opt.textContent = translation;
+                    }
+                }
+            });
+        }
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('metla_lang', lang);
+            applyTranslations();
+            renderChart(currentChartData);
+        }
+
+        let currentChartData = null;
+
+        // ========== КАСТОМНЫЙ ВЫПАДАЮЩИЙ СПИСОК ==========
+        function initCustomSelect() {
+            const trigger = document.getElementById('categoryTrigger');
+            const options = document.getElementById('categoryOptions');
+            const allOptions = document.querySelectorAll('.custom-select-option');
+
+            if (!trigger || !options) return;
+
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isActive = this.classList.contains('active');
+                
+                document.querySelectorAll('.custom-select-trigger').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.custom-select-options').forEach(o => o.classList.remove('active'));
+                
+                if (!isActive) {
+                    this.classList.add('active');
+                    options.classList.add('active');
+                }
+            });
+
+            allOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const value = this.getAttribute('data-value');
+                    const text = this.textContent;
+
+                    allOptions.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+
+                    trigger.setAttribute('data-value', value);
+                    trigger.innerHTML = `<span>${text}</span>`;
+
+                    trigger.classList.remove('active');
+                    options.classList.remove('active');
+                });
+            });
+
+            document.addEventListener('click', function() {
+                trigger.classList.remove('active');
+                options.classList.remove('active');
+            });
+        }
+
+        function getSelectedCategory() {
+            const trigger = document.getElementById('categoryTrigger');
+            return trigger ? trigger.getAttribute('data-value') : 'question';
+        }
+
+        // ========== ПАГИНАЦИЯ И ФИЛЬТРАЦИЯ ==========
+        let currentPage = 1;
+        let hasMoreTickets = false;
+        let isLoadingTickets = false;
+        let currentStatusFilter = 'all';
+
+        function updateTabCounts(data) {
+            document.getElementById('count-all').innerText = data.total || 0;
+            document.getElementById('count-open').innerText = data.open || 0;
+            document.getElementById('count-in_progress').innerText = data.in_progress || 0;
+            document.getElementById('count-resolved').innerText = data.resolved || 0;
+            document.getElementById('count-closed').innerText = data.closed || 0;
+        }
+
+        function setFilter(status) {
+            currentStatusFilter = status;
+            currentPage = 1;
+            
+            document.querySelectorAll('.status-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.status === status) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            document.getElementById('tickets-list').innerHTML = '';
+            loadTickets(1, false);
+        }
+
+        // ========== РАБОТА С ФАЙЛАМИ ==========
+        let selectedFile = null;
+        const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > MAX_FILE_SIZE) {
+                    alert(t('error_file_too_large'));
+                    input.value = '';
+                    return;
+                }
+                selectedFile = file;
+                document.getElementById('fileName').innerText = file.name;
+                document.getElementById('filePreview').classList.add('show');
+            }
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').classList.remove('show');
+        }
+
+        // ========== ОСНОВНАЯ ЛОГИКА ==========
+        function initPulsar() {
+            const canvas = document.getElementById('pulsarCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const size = 120;
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            ctx.scale(dpr, dpr);
+
+            let rotation1 = 0;
+            let rotation2 = 360;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const outerR = size / 2 - 5;
+            const newR = outerR * 0.858;
+
+            function drawArc(x, y, r, startAngle, sweepAngle, color, lineWidth = 2.5) {
+                ctx.beginPath();
+                ctx.arc(x, y, r, (startAngle * Math.PI) / 180, ((startAngle + sweepAngle) * Math.PI) / 180);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, size, size);
+                
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate((rotation1 * Math.PI) / 180);
+                ctx.translate(-centerX, -centerY);
+                drawArc(centerX, centerY, outerR, 30, 90, 'rgba(0, 240, 200, 0.7)', 2.5);
+                drawArc(centerX, centerY, outerR, 210, 90, 'rgba(0, 240, 200, 0.7)', 2.5);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate((rotation2 * Math.PI) / 180);
+                ctx.translate(-centerX, -centerY);
+                drawArc(centerX, centerY, outerR, 120, 60, 'rgba(153, 102, 204, 0.55)', 2.5);
+                drawArc(centerX, centerY, outerR, 300, 60, 'rgba(153, 102, 204, 0.55)', 2.5);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate((rotation2 * Math.PI) / 180);
+                ctx.translate(-centerX, -centerY);
+                drawArc(centerX, centerY, newR, 30, 90, 'rgba(0, 240, 200, 0.45)', 1.8);
+                drawArc(centerX, centerY, newR, 210, 90, 'rgba(0, 240, 200, 0.45)', 1.8);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate((rotation1 * Math.PI) / 180);
+                ctx.translate(-centerX, -centerY);
+                drawArc(centerX, centerY, newR, 120, 60, 'rgba(153, 102, 204, 0.4)', 1.8);
+                drawArc(centerX, centerY, newR, 300, 60, 'rgba(153, 102, 204, 0.4)', 1.8);
+                ctx.restore();
+
+                const gradient = ctx.createRadialGradient(centerX - 15, centerY - 18, 0, centerX, centerY, 60);
+                gradient.addColorStop(0, 'rgba(0, 240, 200, 0.12)');
+                gradient.addColorStop(0.5, 'rgba(153, 102, 204, 0.08)');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                const textGradient = ctx.createLinearGradient(centerX - 30, centerY, centerX + 30, centerY);
+                textGradient.addColorStop(0, '#00F0C8');
+                textGradient.addColorStop(1, '#9966CC');
+                ctx.fillStyle = textGradient;
+                ctx.font = '800 48px Syne';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('M', centerX, centerY - 2);
+
+                rotation1 += 0.3;
+                rotation2 -= 0.4;
+                if (rotation1 >= 360) rotation1 = 0;
+                if (rotation2 <= 0) rotation2 = 360;
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        const userId = tg.initDataUnsafe?.user?.id || 1525184161;
+        const BASE_API = 'https://metlasupportbot-production.up.railway.app/api';
+
+        let selectedPriority = 'normal';
+        let statusChartInstance = null;
+
+        async function apiFetch(endpoint) {
+            const headers = {};
+            if (window.Telegram?.WebApp?.initData) {
+                headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+            }
+            const response = await fetch(`${BASE_API}${endpoint}`, { headers });
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        }
+
+        async function loadData() {
+            try {
+                const statsData = await apiFetch(`/stats/${userId}`);
+                
+                currentChartData = statsData;
+                renderStats(statsData);
+                renderChart(statsData);
+                updateTabCounts(statsData);
+                
+                const avgRatingEl = document.getElementById('avg-rating');
+                const ratingCountEl = document.getElementById('rating-count');
+                if (avgRatingEl) avgRatingEl.innerText = statsData.avg_rating || 0;
+                if (ratingCountEl) ratingCountEl.innerText = statsData.recent_tickets ? statsData.recent_tickets.filter(t => t.rating).length : 0;
+                
+                currentPage = 1;
+                await loadTickets(1, false);
+                
+                const loader = document.getElementById('loader');
+                const content = document.getElementById('content');
+                if (loader) loader.classList.add('hidden');
+                if (content) content.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    const percent = statsData.total > 0 ? Math.round((statsData.resolved / statsData.total) * 100) : 0;
+                    const progressBar = document.getElementById('progress-bar');
+                    const progressText = document.getElementById('progress-text');
+                    if (progressBar) progressBar.style.width = `${percent}%`;
+                    if (progressText) progressText.innerText = `${percent}%`;
+                }, 300);
+
+            } catch (error) {
+                console.error('Ошибка:', error);
+                const loader = document.getElementById('loader');
+                if (loader) {
+                    loader.innerText = t('loading');
+                    loader.style.color = 'var(--neon-flamingo)';
+                }
+            }
+        }
+
+        async function loadTickets(page, append = false) {
+            if (isLoadingTickets) return;
+            isLoadingTickets = true;
+            
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (loadMoreBtn && !append) {
+                loadMoreBtn.classList.add('hidden');
+            } else if (loadMoreBtn && append) {
+                loadMoreBtn.innerText = t('loading_more');
+                loadMoreBtn.disabled = true;
+            }
+
+            try {
+                const statusParam = currentStatusFilter === 'all' ? '' : `&status=${currentStatusFilter}`;
+                const res = await fetch(`${BASE_API}/tickets?user_id=${userId}&page=${page}&limit=10${statusParam}`);
+                if (!res.ok) throw new Error('Network error');
+                const data = await res.json();
+                
+                renderTickets(data.tickets, append);
+                hasMoreTickets = data.has_more;
+                currentPage = page;
+                
+                if (loadMoreBtn) {
+                    if (hasMoreTickets) {
+                        loadMoreBtn.classList.remove('hidden');
+                        loadMoreBtn.innerText = t('btn_load_more');
+                        loadMoreBtn.disabled = false;
+                    } else {
+                        loadMoreBtn.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки тикетов:', error);
+            } finally {
+                isLoadingTickets = false;
+            }
+        }
+
+        function loadMoreTickets() {
+            loadTickets(currentPage + 1, true);
+        }
+
+        function renderStats(data) {
+            const statTotal = document.getElementById('stat-total');
+            const statOpen = document.getElementById('stat-open');
+            const statResolved = document.getElementById('stat-resolved');
+            const statAvg = document.getElementById('stat-avg');
+            
+            if (statTotal) statTotal.innerText = data.total || 0;
+            if (statOpen) statOpen.innerText = data.open || 0;
+            if (statResolved) statResolved.innerText = data.resolved || 0;
+            if (statAvg) {
+                const avg = data.avg_response || 0;
+                statAvg.innerText = typeof avg === 'number' ? `${avg}${currentLang === 'ru' ? 'ч' : 'h'}` : avg;
+            }
+        }
+
+        function renderChart(data) {
+            const canvas = document.getElementById('statusChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+            }
+            
+            const aquaGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            aquaGradient.addColorStop(0, '#00F0C8');
+            aquaGradient.addColorStop(1, '#00C9A7');
+            
+            const labels = currentLang === 'ru' 
+                ? ['Открыто', 'В работе', 'Решено', 'Закрыто']
+                : ['Open', 'In Progress', 'Resolved', 'Closed'];
+            
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: [data.open || 0, data.in_progress || 0, data.resolved || 0, data.closed || 0],
+                        backgroundColor: [aquaGradient, '#9966CC', '#FFD166', '#5A6475'],
+                        borderWidth: 2,
+                        borderColor: '#0B0D17',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#9BA4B5',
+                                font: { family: 'Space Mono', size: 10 },
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded',
+                                padding: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTickets(tickets, append = false) {
+            const container = document.getElementById('tickets-list');
+            if (!container) return;
+            
+            if (!append) {
+                container.innerHTML = '';
+            }
+            
+            if (!tickets || tickets.length === 0) {
+                if (!append) {
+                    container.innerHTML = `<div style="text-align: center; color: var(--text-hint); font-family: Space Mono; font-size: 12px; padding: 20px;">${t('no_tickets')}</div>`;
+                }
+                return;
+            }
+
+            tickets.forEach(ticket => {
+                const statusClass = `status-${ticket.status}`;
+                const statusText = t(`status_${ticket.status}`) || ticket.status;
+                const categoryText = ticket.category || (currentLang === 'ru' ? 'Общий' : 'General');
+                const dateStr = new Date(ticket.created_at * 1000).toLocaleDateString(currentLang === 'ru' ? 'ru-RU' : 'en-US');
+
+                const div = document.createElement('div');
+                div.className = 'ticket-item';
+                div.onclick = () => openTicketModal(ticket.id);
+                div.innerHTML = `
+                    <div class="ticket-info">
+                        <h4>${t('ticket')} #${ticket.id}</h4>
+                        <span>${categoryText} • ${dateStr}</span>
+                    </div>
+                    <div class="status-chip ${statusClass}">${statusText}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function openTicketModal(ticketId) {
+            const modal = document.getElementById('ticketModal');
+            const conversation = document.getElementById('ticketConversation');
+            const title = document.getElementById('ticketModalTitle');
+            
+            if (title) title.innerText = `${t('ticket')} #${ticketId}`;
+            if (conversation) conversation.innerHTML = `<div class="loader">${t('loading_messages')}</div>`;
+            if (modal) modal.classList.add('active');
+            
+            try {
+                const response = await fetch(`${BASE_API}/ticket/${ticketId}/messages`);
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+                renderConversation(data);
+            } catch (error) {
+                console.error('Ошибка загрузки переписки:', error);
+                if (conversation) conversation.innerHTML = `<div class="no-messages">${t('error_loading_messages')}</div>`;
+            }
+        }
+
+        function renderConversation(data) {
+            const conversation = document.getElementById('ticketConversation');
+            if (!conversation) return;
+            
+            if (!data.messages || data.messages.length === 0) {
+                conversation.innerHTML = `<div class="no-messages">${t('no_messages')}</div>`;
+                return;
+            }
+            
+            let html = `
+                <div class="ticket-conversation-header">
+                    <h3>${t('ticket')} #${data.ticket_id}</h3>
+                    <span class="status-chip status-${data.status}">${t(`status_${data.status}`) || data.status}</span>
+                </div>
+            `;
+            
+            data.messages.forEach(msg => {
+                const isUser = msg.sender_type === 'user';
+                const messageClass = isUser ? 'message-user' : 'message-admin';
+                const time = new Date(msg.timestamp * 1000).toLocaleString(currentLang === 'ru' ? 'ru-RU' : 'en-US');
+                let msgText = msg.message_text || (currentLang === 'ru' ? '[Файл]' : '[File]');
+                
+                if (msg.file_id && !msgText.includes('📎') && !msgText.includes('[Файл]') && !msgText.includes('[File]')) {
+                    msgText = `📎 ${msgText}`;
+                }
+                
+                html += `
+                    <div class="message ${messageClass}">
+                        <div class="message-text">${msgText}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            });
+            
+            conversation.innerHTML = html;
+        }
+
+        function closeTicketModal() {
+            const modal = document.getElementById('ticketModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function openNewTicketModal() {
+            const modal = document.getElementById('newTicketModal');
+            const form = document.getElementById('newTicketForm');
+            const success = document.getElementById('successMessage');
+            const msgArea = document.getElementById('ticketMessage');
+            
+            if (modal) modal.classList.add('active');
+            if (form) form.classList.remove('hidden');
+            if (success) success.classList.add('hidden');
+            if (msgArea) msgArea.value = '';
+            removeFile();
+            selectPriority('normal');
+            resetCategorySelect();
+        }
+
+        function resetCategorySelect() {
+            const trigger = document.getElementById('categoryTrigger');
+            const options = document.querySelectorAll('.custom-select-option');
+            
+            if (trigger) {
+                trigger.setAttribute('data-value', 'question');
+                trigger.innerHTML = `<span>${t('cat_question')}</span>`;
+            }
+            
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.getAttribute('data-value') === 'question') {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        function closeNewTicketModal() {
+            const modal = document.getElementById('newTicketModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function selectPriority(priority) {
+            selectedPriority = priority;
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.priority === priority) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        async function submitTicket() {
+            const messageEl = document.getElementById('ticketMessage');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            const category = getSelectedCategory();
+            const messageText = messageEl ? messageEl.value.trim() : '';
+            
+            if (!messageText && !selectedFile) {
+                alert(t('alert_no_description'));
+                return;
+            }
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = t('creating');
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('user_id', userId);
+                formData.append('category', category);
+                formData.append('priority', selectedPriority);
+                formData.append('message_text', messageText);
+                if (selectedFile) {
+                    formData.append('file', selectedFile);
+                }
+
+                const response = await fetch(`${BASE_API}/ticket/create`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const ticketIdEl = document.getElementById('createdTicketId');
+                    const form = document.getElementById('newTicketForm');
+                    const success = document.getElementById('successMessage');
+                    
+                    if (ticketIdEl) ticketIdEl.innerText = data.ticket_id;
+                    if (form) form.classList.add('hidden');
+                    if (success) success.classList.remove('hidden');
+                    
+                    setTimeout(() => { loadData(); }, 2000);
+                } else {
+                    alert(t('error_creating') + ' ' + (data.error || ''));
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert(t('error_creating'));
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = t('btn_create_ticket');
+                }
+            }
+        }
+
+        function openFAQ() {
+            const modal = document.getElementById('faqModal');
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeFAQ() {
+            const modal = document.getElementById('faqModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        window.onclick = function(event) {
+            if (event.target && event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // Инициализация
+        applyTranslations();
+        initPulsar();
+        initCustomSelect();
+        loadData();
+    </script>
+</body>
+</html>
