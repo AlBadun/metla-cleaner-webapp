@@ -950,7 +950,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 data-i18n="faq_title">FAQ</h2>
-                <button class="modal-close" onclick="closeFAQ()">✕</button>
+                <button class="modal-close" onclick="closeFAQ()"></button>
             </div>
             <div class="faq-item">
                 <h3 data-i18n="faq_q1">Как очистить кэш?</h3>
@@ -1027,7 +1027,7 @@
                     <label class="form-label" data-i18n="label_attachment">Прикрепить файл (до 20 МБ)</label>
                     <input type="file" id="fileInput" accept="image/jpeg, image/png, application/pdf" style="display: none;" onchange="handleFileSelect(this)">
                     <button type="button" class="action-btn secondary file-attach-btn" onclick="document.getElementById('fileInput').click()">
-                        📎 <span data-i18n="btn_attach_file">Выбрать файл</span>
+                         <span data-i18n="btn_attach_file">Выбрать файл</span>
                     </button>
                     <div id="filePreview">
                         <span id="fileName" style="font-size: 13px; color: var(--text-primary); font-family: 'Space Mono'; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;"></span>
@@ -1483,7 +1483,8 @@
 
         async function loadData() {
             try {
-                const statsData = await apiFetch(`/stats/${userId}`);
+                // ИСПРАВЛЕНО: убран userId из URL
+                const statsData = await apiFetch(`/stats`);
                 
                 currentChartData = statsData;
                 renderStats(statsData);
@@ -1535,7 +1536,8 @@
 
             try {
                 const statusParam = currentStatusFilter === 'all' ? '' : `&status=${currentStatusFilter}`;
-                const res = await fetch(`${BASE_API}/tickets?user_id=${userId}&page=${page}&limit=10${statusParam}`);
+                // ИСПРАВЛЕНО: убран user_id из URL
+                const res = await fetch(`${BASE_API}/tickets?page=${page}&limit=10${statusParam}`);
                 if (!res.ok) throw new Error('Network error');
                 const data = await res.json();
                 
