@@ -1483,7 +1483,6 @@
 
         async function loadData() {
             try {
-                // ИСПРАВЛЕНО: убран userId из URL
                 const statsData = await apiFetch(`/stats`);
                 
                 currentChartData = statsData;
@@ -1536,7 +1535,6 @@
 
             try {
                 const statusParam = currentStatusFilter === 'all' ? '' : `&status=${currentStatusFilter}`;
-                // ИСПРАВЛЕНО: убран user_id из URL
                 const res = await fetch(`${BASE_API}/tickets?page=${page}&limit=10${statusParam}`);
                 if (!res.ok) throw new Error('Network error');
                 const data = await res.json();
@@ -1800,8 +1798,14 @@
                     formData.append('file', selectedFile);
                 }
 
+                const headers = {};
+                if (window.Telegram?.WebApp?.initData) {
+                    headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
+                }
+
                 const response = await fetch(`${BASE_API}/ticket/create`, {
                     method: 'POST',
+                    headers: headers,
                     body: formData
                 });
                 
