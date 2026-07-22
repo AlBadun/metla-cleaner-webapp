@@ -1471,13 +1471,20 @@
         let selectedPriority = 'normal';
         let statusChartInstance = null;
 
-        async function apiFetch(endpoint) {
-            const headers = {};
+        // ✅ ИСПРАВЛЕНИЕ: Универсальная функция для всех API запросов с заголовком
+        async function apiFetch(endpoint, options = {}) {
+            const headers = options.headers || {};
             if (window.Telegram?.WebApp?.initData) {
                 headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
             }
-            const response = await fetch(`${BASE_API}${endpoint}`, { headers });
-            if (!response.ok) throw new Error('Network error');
+            
+            console.log(`[API] Запрос к: ${BASE_API}${endpoint}`, { headers });
+            
+            const response = await fetch(`${BASE_API}${endpoint}`, { ...options, headers });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Network error: ${response.status} - ${errorText}`);
+            }
             return response.json();
         }
 
@@ -1512,10 +1519,10 @@
                 }, 300);
 
             } catch (error) {
-                console.error('Ошибка:', error);
+                console.error('Ошибка loadData:', error);
                 const loader = document.getElementById('loader');
                 if (loader) {
-                    loader.innerText = t('loading');
+                    loader.innerText = 'Ошибка: ' + error.message;
                     loader.style.color = 'var(--neon-flamingo)';
                 }
             }
@@ -1535,9 +1542,8 @@
 
             try {
                 const statusParam = currentStatusFilter === 'all' ? '' : `&status=${currentStatusFilter}`;
-                const res = await fetch(`${BASE_API}/tickets?page=${page}&limit=10${statusParam}`);
-                if (!res.ok) throw new Error('Network error');
-                const data = await res.json();
+                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch вместо голого fetch
+                const data = await apiFetch(`/tickets?page=${page}&limit=10${statusParam}`);
                 
                 renderTickets(data.tickets, append);
                 hasMoreTickets = data.has_more;
@@ -1672,9 +1678,8 @@
             if (modal) modal.classList.add('active');
             
             try {
-                const response = await fetch(`${BASE_API}/ticket/${ticketId}/messages`);
-                if (!response.ok) throw new Error('Network error');
-                const data = await response.json();
+                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch
+                const data = await apiFetch(`/ticket/${ticketId}/messages`);
                 renderConversation(data);
             } catch (error) {
                 console.error('Ошибка загрузки переписки:', error);
@@ -1798,19 +1803,13 @@
                     formData.append('file', selectedFile);
                 }
 
-                const headers = {};
-                if (window.Telegram?.WebApp?.initData) {
-                    headers['X-Telegram-Init-Data'] = window.Telegram.WebApp.initData;
-                }
+                console.log('[API] Отправка тикета. InitData присутствует:', !!window.Telegram?.WebApp?.initData);
 
-                const response = await fetch(`${BASE_API}/ticket/create`, {
+                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch для отправки
+                const data = await apiFetch(`/ticket/create`, {
                     method: 'POST',
-                    headers: headers,
                     body: formData
                 });
-                
-                if (!response.ok) throw new Error('Network error');
-                const data = await response.json();
                 
                 if (data.success) {
                     const ticketIdEl = document.getElementById('createdTicketId');
@@ -1826,8 +1825,8 @@
                     alert(t('error_creating') + ' ' + (data.error || ''));
                 }
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert(t('error_creating'));
+                console.error('Ошибка создания тикета:', error);
+                alert(t('error_creating') + '\nДетали: ' + error.message);
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
