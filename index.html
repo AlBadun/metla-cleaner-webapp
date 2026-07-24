@@ -473,19 +473,23 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            text-align: center;
         }
 
         .modal-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-bottom: 24px;
+            position: relative;
         }
 
         .modal-header h2 {
             font-family: 'Syne', sans-serif;
             font-size: 24px;
             color: var(--aqua-core);
+            text-align: center;
+            margin: 0;
         }
 
         .modal-close {
@@ -500,6 +504,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: absolute;
+            right: 0;
         }
 
         .faq-item {
@@ -508,6 +514,7 @@
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 12px;
+            text-align: left;
         }
 
         .faq-item h3 {
@@ -529,6 +536,7 @@
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
+            text-align: left;
         }
 
         .ticket-conversation-header {
@@ -592,6 +600,7 @@
 
         .form-group {
             margin-bottom: 20px;
+            text-align: left;
         }
 
         .form-label {
@@ -842,6 +851,9 @@
 
         .ticket-actions {
             padding: 0 20px 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .ticket-actions button {
@@ -974,7 +986,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 data-i18n="faq_title">FAQ</h2>
-                <button class="modal-close" onclick="closeFAQ()"></button>
+                <button class="modal-close" onclick="closeFAQ()">✕</button>
             </div>
             <div class="faq-item">
                 <h3 data-i18n="faq_q1">Как очистить кэш?</h3>
@@ -1000,7 +1012,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="ticketModalTitle">Тикет</h2>
-                <button class="modal-close" onclick="closeTicketModal()"></button>
+                <button class="modal-close" onclick="closeTicketModal()">✕</button>
             </div>
             <div id="ticketConversation" class="ticket-conversation">
                 <div class="loader">Загрузка переписки...</div>
@@ -1043,7 +1055,7 @@
                         <div class="priority-btn" data-priority="low" onclick="selectPriority('low')" data-i18n="pri_low">Низкий</div>
                         <div class="priority-btn active" data-priority="normal" onclick="selectPriority('normal')" data-i18n="pri_normal">Обычный</div>
                         <div class="priority-btn" data-priority="high" onclick="selectPriority('high')" data-i18n="pri_high">Высокий</div>
-                        <div class="priority-btn" data-priority="urgent" onclick="selectPriority('urgent')" data-i18n="pri_urgent"> Срочно</div>
+                        <div class="priority-btn" data-priority="urgent" onclick="selectPriority('urgent')" data-i18n="pri_urgent">🔴 Срочно</div>
                     </div>
                 </div>
 
@@ -1751,7 +1763,7 @@
                 let msgText = msg.message_text || (currentLang === 'ru' ? '[Файл]' : '[File]');
                 
                 if (msg.file_id && !msgText.includes('📎') && !msgText.includes('[Файл]') && !msgText.includes('[File]')) {
-                    msgText = ` ${msgText}`;
+                    msgText = `📎 ${msgText}`;
                 }
                 
                 html += `
