@@ -840,6 +840,30 @@
             display: flex;
         }
 
+        .ticket-actions {
+            padding: 0 20px 20px 20px;
+        }
+
+        .ticket-actions button {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ticket-actions button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .ticket-actions button:active {
+            transform: scale(0.98);
+        }
+
         @media (max-width: 480px) {
             .stat-value { font-size: 28px; }
             .header h1 { font-size: 24px; }
@@ -975,11 +999,16 @@
     <div id="ticketModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="ticketModalTitle" data-i18n="ticket">Тикет</h2>
-                <button class="modal-close" onclick="closeTicketModal()">✕</button>
+                <h2 id="ticketModalTitle">Тикет</h2>
+                <button class="modal-close" onclick="closeTicketModal()"></button>
             </div>
             <div id="ticketConversation" class="ticket-conversation">
-                <div class="loader" data-i18n="loading_messages">Загрузка переписки...</div>
+                <div class="loader">Загрузка переписки...</div>
+            </div>
+            <div id="ticketActions" class="ticket-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+                <button id="closeTicketBtn" class="action-btn" onclick="closeUserTicket()" style="flex: 1; background: linear-gradient(90deg, #FF6B6B, #EE5A6F);">
+                    Закрыть тикет
+                </button>
             </div>
         </div>
     </div>
@@ -1014,7 +1043,7 @@
                         <div class="priority-btn" data-priority="low" onclick="selectPriority('low')" data-i18n="pri_low">Низкий</div>
                         <div class="priority-btn active" data-priority="normal" onclick="selectPriority('normal')" data-i18n="pri_normal">Обычный</div>
                         <div class="priority-btn" data-priority="high" onclick="selectPriority('high')" data-i18n="pri_high">Высокий</div>
-                        <div class="priority-btn" data-priority="urgent" onclick="selectPriority('urgent')" data-i18n="pri_urgent">🔴 Срочно</div>
+                        <div class="priority-btn" data-priority="urgent" onclick="selectPriority('urgent')" data-i18n="pri_urgent"> Срочно</div>
                     </div>
                 </div>
 
@@ -1163,7 +1192,7 @@
                 pri_low: 'Low',
                 pri_normal: 'Normal',
                 pri_high: 'High',
-                pri_urgent: ' Urgent',
+                pri_urgent: '🔴 Urgent',
                 no_tickets: 'No active tickets',
                 no_messages: 'No messages',
                 error_loading_messages: 'Error loading messages',
@@ -1672,15 +1701,27 @@
             const modal = document.getElementById('ticketModal');
             const conversation = document.getElementById('ticketConversation');
             const title = document.getElementById('ticketModalTitle');
+            const closeBtn = document.getElementById('closeTicketBtn');
             
             if (title) title.innerText = `${t('ticket')} #${ticketId}`;
             if (conversation) conversation.innerHTML = `<div class="loader">${t('loading_messages')}</div>`;
             if (modal) modal.classList.add('active');
             
+            // Показываем кнопку закрытия только для открытых тикетов
+            if (closeBtn) {
+                closeBtn.style.display = 'block';
+                closeBtn.innerText = currentLang === 'ru' ? 'Закрыть тикет' : 'Close Ticket';
+            }
+            
             try {
                 // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch
                 const data = await apiFetch(`/ticket/${ticketId}/messages`);
                 renderConversation(data);
+                
+                // Скрываем кнопку, если тикет уже закрыт
+                if (data.status === 'closed' && closeBtn) {
+                    closeBtn.style.display = 'none';
+                }
             } catch (error) {
                 console.error('Ошибка загрузки переписки:', error);
                 if (conversation) conversation.innerHTML = `<div class="no-messages">${t('error_loading_messages')}</div>`;
@@ -1710,7 +1751,7 @@
                 let msgText = msg.message_text || (currentLang === 'ru' ? '[Файл]' : '[File]');
                 
                 if (msg.file_id && !msgText.includes('📎') && !msgText.includes('[Файл]') && !msgText.includes('[File]')) {
-                    msgText = `📎 ${msgText}`;
+                    msgText = ` ${msgText}`;
                 }
                 
                 html += `
@@ -1727,6 +1768,31 @@
         function closeTicketModal() {
             const modal = document.getElementById('ticketModal');
             if (modal) modal.classList.remove('active');
+        }
+
+        async function closeUserTicket() {
+            const ticketId = document.getElementById('ticketModalTitle').innerText.replace('Ticket #', '').replace('Тикет #', '');
+            
+            if (!confirm(currentLang === 'ru' ? `Закрыть тикет #${ticketId}?\n\nПосле закрытия вы не сможете отправить новые сообщения в этот тикет.` : `Close ticket #${ticketId}?\n\nAfter closing, you won't be able to send new messages to this ticket.`)) {
+                return;
+            }
+
+            try {
+                const response = await apiFetch(`/ticket/${ticketId}/close`, {
+                    method: 'PUT'
+                });
+
+                if (response.success) {
+                    alert(currentLang === 'ru' ? `✅ Тикет #${ticketId} закрыт.` : `✅ Ticket #${ticketId} closed.`);
+                    closeTicketModal();
+                    loadData(); // Обновить статистику
+                } else {
+                    alert(currentLang === 'ru' ? `❌ Ошибка: ${response.error}` : `❌ Error: ${response.error}`);
+                }
+            } catch (error) {
+                console.error('Error closing ticket:', error);
+                alert(currentLang === 'ru' ? '❌ Ошибка закрытия тикета' : '❌ Error closing ticket');
+            }
         }
 
         function openNewTicketModal() {
