@@ -854,6 +854,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 12px;
         }
 
         .ticket-actions button {
@@ -865,6 +866,7 @@
             font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
+            flex: 1;
         }
 
         .ticket-actions button:hover {
@@ -915,6 +917,57 @@
         }
         .search-clear-btn:hover {
             color: var(--aqua-core);
+        }
+
+        /* Стили для шаблонов быстрых ответов */
+        .quick-responses-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+        .qr-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 240, 200, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .qr-item:hover {
+            background: rgba(0, 240, 200, 0.05);
+            border-color: var(--aqua-core);
+            transform: translateY(-2px);
+        }
+        .qr-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--aqua-core);
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .qr-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            white-space: pre-wrap;
+        }
+        .qr-category {
+            display: inline-block;
+            font-size: 10px;
+            font-family: 'Space Mono', monospace;
+            color: var(--electric-violet);
+            background: rgba(153, 102, 204, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            text-transform: uppercase;
         }
 
         @media (max-width: 480px) {
@@ -1005,7 +1058,6 @@
 
             <div class="section-title" data-i18n="recent_tickets">Последние обращения</div>
             
-            <!-- ПОИСК -->
             <div class="search-container">
                 <input type="text" id="searchInput" class="search-input" data-i18n-placeholder="search_placeholder" placeholder="Поиск по ID, категории или тексту...">
                 <button id="clearSearchBtn" class="search-clear-btn hidden" onclick="clearSearch()">✕</button>
@@ -1076,10 +1128,26 @@
             <div id="ticketConversation" class="ticket-conversation">
                 <div class="loader">Загрузка переписки...</div>
             </div>
-            <div id="ticketActions" class="ticket-actions" style="display: flex; gap: 12px; margin-top: 20px;">
-                <button id="closeTicketBtn" class="action-btn" onclick="closeUserTicket()" style="flex: 1; background: linear-gradient(90deg, #FF6B6B, #EE5A6F);">
+            <div id="ticketActions" class="ticket-actions">
+                <button id="quickResponsesBtn" class="action-btn secondary" onclick="openQuickResponsesModal()" style="border-color: var(--electric-violet); color: var(--electric-violet);">
+                    💬 Шаблоны
+                </button>
+                <button id="closeTicketBtn" class="action-btn" onclick="closeUserTicket()" style="background: linear-gradient(90deg, #FF6B6B, #EE5A6F);">
                     Закрыть тикет
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно быстрых ответов -->
+    <div id="quickResponsesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 data-i18n="quick_responses_title">Шаблоны ответов</h2>
+                <button class="modal-close" onclick="closeQuickResponsesModal()">✕</button>
+            </div>
+            <div id="quickResponsesList" class="quick-responses-list">
+                <div class="loader">Загрузка шаблонов...</div>
             </div>
         </div>
     </div>
@@ -1223,7 +1291,10 @@
                 btn_attach_file: 'Выбрать файл',
                 error_file_too_large: 'Файл слишком большой. Максимальный размер — 20 МБ.',
                 search_placeholder: 'Поиск по ID, категории или тексту...',
-                no_search_results: 'Ничего не найдено'
+                no_search_results: 'Ничего не найдено',
+                quick_responses_title: 'Шаблоны ответов',
+                qr_copied: '✅ Скопировано!',
+                qr_load_error: 'Ошибка загрузки шаблонов'
             },
             en: {
                 app_title: 'METLA',
@@ -1295,7 +1366,10 @@
                 btn_attach_file: 'Choose file',
                 error_file_too_large: 'File is too large. Maximum size is 20 MB.',
                 search_placeholder: 'Search by ID, category or text...',
-                no_search_results: 'No results found'
+                no_search_results: 'No results found',
+                quick_responses_title: 'Quick Responses',
+                qr_copied: '✅ Copied!',
+                qr_load_error: 'Error loading templates'
             }
         };
 
@@ -2115,7 +2189,7 @@
                         } else if (query.length === 0) {
                             clearSearch();
                         }
-                    }, 400); // 400ms debounce
+                    }, 400);
                 });
             }
         });
@@ -2163,6 +2237,67 @@
             });
             
             loadTickets(1, false);
+        }
+
+        // ========== ШАБЛОНЫ БЫСТРЫХ ОТВЕТОВ ==========
+        async function openQuickResponsesModal() {
+            const modal = document.getElementById('quickResponsesModal');
+            const list = document.getElementById('quickResponsesList');
+            
+            if (modal) modal.classList.add('active');
+            if (list) list.innerHTML = `<div class="loader">${t('loading_more')}</div>`;
+            
+            try {
+                const data = await apiFetch('/quick-responses');
+                renderQuickResponses(data.templates);
+            } catch (error) {
+                console.error('Ошибка загрузки шаблонов:', error);
+                if (list) list.innerHTML = `<div style="text-align: center; color: var(--neon-flamingo); font-family: Space Mono; font-size: 12px; padding: 20px;">${t('qr_load_error')}</div>`;
+            }
+        }
+
+        function closeQuickResponsesModal() {
+            const modal = document.getElementById('quickResponsesModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function renderQuickResponses(templates) {
+            const list = document.getElementById('quickResponsesList');
+            if (!list) return;
+            
+            if (!templates || templates.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-hint); font-family: Space Mono; font-size: 12px; padding: 20px;">Шаблоны не найдены</div>`;
+                return;
+            }
+            
+            list.innerHTML = '';
+            templates.forEach(template => {
+                const div = document.createElement('div');
+                div.className = 'qr-item';
+                div.onclick = () => copyQuickResponse(template.message_text, div);
+                
+                div.innerHTML = `
+                    <div class="qr-title">${template.title}</div>
+                    <div class="qr-text">${template.message_text}</div>
+                    ${template.category ? `<div class="qr-category">${template.category}</div>` : ''}
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function copyQuickResponse(text, element) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalHTML = element.innerHTML;
+                element.innerHTML = `<div style="text-align: center; color: var(--aqua-core); font-weight: bold; padding: 10px;">${t('qr_copied')}</div>`;
+                
+                setTimeout(() => {
+                    element.innerHTML = originalHTML;
+                }, 1500);
+            } catch (err) {
+                console.error('Не удалось скопировать: ', err);
+                alert('Не удалось скопировать текст');
+            }
         }
 
         // Инициализация
