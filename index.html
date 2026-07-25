@@ -871,7 +871,7 @@
 
         .ticket-actions button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         .ticket-actions button:active {
@@ -1129,11 +1129,11 @@
                 <div class="loader">Загрузка переписки...</div>
             </div>
             <div id="ticketActions" class="ticket-actions">
-                <button id="quickResponsesBtn" class="action-btn secondary" onclick="openQuickResponsesModal()" style="border-color: var(--electric-violet); color: var(--electric-violet);">
-                    💬 Шаблоны
+                <button id="quickResponsesBtn" class="action-btn" onclick="openQuickResponsesModal()" style="background: linear-gradient(90deg, var(--electric-violet), #8B5CF6);">
+                    <span data-i18n="btn_quick_responses">Шаблоны</span>
                 </button>
                 <button id="closeTicketBtn" class="action-btn" onclick="closeUserTicket()" style="background: linear-gradient(90deg, #FF6B6B, #EE5A6F);">
-                    Закрыть тикет
+                    <span data-i18n="btn_close_ticket">Закрыть тикет</span>
                 </button>
             </div>
         </div>
@@ -1293,6 +1293,8 @@
                 search_placeholder: 'Поиск по ID, категории или тексту...',
                 no_search_results: 'Ничего не найдено',
                 quick_responses_title: 'Шаблоны ответов',
+                btn_quick_responses: 'Шаблоны',
+                btn_close_ticket: 'Закрыть тикет',
                 qr_copied: '✅ Скопировано!',
                 qr_load_error: 'Ошибка загрузки шаблонов'
             },
@@ -1368,6 +1370,8 @@
                 search_placeholder: 'Search by ID, category or text...',
                 no_search_results: 'No results found',
                 quick_responses_title: 'Quick Responses',
+                btn_quick_responses: 'Templates',
+                btn_close_ticket: 'Close Ticket',
                 qr_copied: '✅ Copied!',
                 qr_load_error: 'Error loading templates'
             }
@@ -1455,6 +1459,11 @@
             const activeTab = document.querySelector('#activityPeriodTabs .status-tab.active');
             if (activeTab) {
                 updateActivityChart(parseInt(activeTab.dataset.days));
+            }
+            // Перерисовываем шаблоны, если модальное окно открыто, чтобы обновить язык
+            const qrModal = document.getElementById('quickResponsesModal');
+            if (qrModal && qrModal.classList.contains('active')) {
+                openQuickResponsesModal();
             }
         }
 
@@ -2266,21 +2275,53 @@
             if (!list) return;
             
             if (!templates || templates.length === 0) {
-                list.innerHTML = `<div style="text-align: center; color: var(--text-hint); font-family: Space Mono; font-size: 12px; padding: 20px;">Шаблоны не найдены</div>`;
+                list.innerHTML = `<div style="text-align: center; color: var(--text-hint); font-family: Space Mono; font-size: 12px; padding: 20px;">${currentLang === 'ru' ? 'Шаблоны не найдены' : 'No templates found'}</div>`;
                 return;
             }
             
+            // Словарь для перевода заголовков и текста (так как в БД они на русском)
+            const templateTranslations = {
+                'Как очистить кэш': { en_title: 'How to clear cache', en_text: 'To clear cache in METLA Cleaner:\n\n1. Open the app\n2. Go to "Storage" section\n3. Tap "Scan"\n4. Tap "Clear cache"\n\nThe app will automatically remove temporary files.' },
+                'Как восстановить файл': { en_title: 'How to restore a file', en_text: 'To restore a file from quarantine:\n\n1. Open METLA Cleaner\n2. Go to "Profile"\n3. Select "Quarantine"\n4. Find the needed file\n5. Tap "Restore"\n\nThe file will be returned to its original location.' },
+                'Поиск дубликатов не работает': { en_title: 'Duplicate search not working', en_text: 'If duplicate search doesn\'t work, check permissions:\n\n1. Open Android Settings\n2. Apps → METLA Cleaner → Permissions\n3. Enable "Full access to files" (MANAGE_EXTERNAL_STORAGE)\n\nWithout this permission, Android limits duplicate search.' },
+                'Как связаться с поддержкой': { en_title: 'How to contact support', en_text: 'To contact support:\n\n1. Tap "Support" button in the main menu\n2. Select question category\n3. Describe your problem\n4. Attach a screenshot (if needed)\n\nWe will reply within 24 hours!' },
+                'Приложение не запускается': { en_title: 'App won\'t launch', en_text: 'If the app won\'t launch:\n\n1. Restart your device\n2. Check for updates in Play Market\n3. Clear app cache (Settings → Apps → METLA → Storage → Clear cache)\n4. If it doesn\'t help, reinstall the app\n\nIf the problem persists, contact us!' }
+            };
+
+            const categoryTranslations = {
+                'cache': currentLang === 'ru' ? 'Кэш' : 'Cache',
+                'restore': currentLang === 'ru' ? 'Восстановление' : 'Restore',
+                'duplicates': currentLang === 'ru' ? 'Дубликаты' : 'Duplicates',
+                'support': currentLang === 'ru' ? 'Поддержка' : 'Support',
+                'launch': currentLang === 'ru' ? 'Запуск' : 'Launch',
+                'general': currentLang === 'ru' ? 'Общее' : 'General'
+            };
+
             list.innerHTML = '';
             templates.forEach(template => {
                 const div = document.createElement('div');
                 div.className = 'qr-item';
-                div.onclick = () => copyQuickResponse(template.message_text, div);
+                
+                // Определяем текст и заголовок в зависимости от языка
+                let displayTitle = template.title;
+                let displayText = template.message_text;
+                
+                if (currentLang === 'en' && templateTranslations[template.title]) {
+                    displayTitle = templateTranslations[template.title].en_title;
+                    displayText = templateTranslations[template.title].en_text;
+                }
+
+                const categoryText = categoryTranslations[template.category] || template.category;
                 
                 div.innerHTML = `
-                    <div class="qr-title">${template.title}</div>
-                    <div class="qr-text">${template.message_text}</div>
-                    ${template.category ? `<div class="qr-category">${template.category}</div>` : ''}
+                    <div class="qr-title">${displayTitle}</div>
+                    <div class="qr-text">${displayText}</div>
+                    ${template.category ? `<div class="qr-category">${categoryText}</div>` : ''}
                 `;
+                
+                // Копируем отображаемый (переведенный) текст
+                div.onclick = () => copyQuickResponse(displayText, div);
+                
                 list.appendChild(div);
             });
         }
