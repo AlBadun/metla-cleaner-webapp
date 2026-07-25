@@ -924,7 +924,7 @@
             </div>
 
             <div class="glass-card" style="margin-top: 16px;">
-                <div class="section-title" data-i18n="avg_rating_title">Средняя оценка</div>
+                <div class="section-title" style="margin-top: 0; text-align: center;" data-i18n="avg_rating_title">Средняя оценка</div>
                 <div style="text-align: center; font-size: 28px; font-weight: 700; color: var(--aqua-core); margin: 16px 0;">
                     <span id="avg-rating">0</span> / 5
                 </div>
@@ -937,6 +937,19 @@
                 <div class="section-title" style="margin-top: 0; text-align: center;" data-i18n="distribution">Распределение</div>
                 <div class="chart-container">
                     <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- НОВЫЙ БЛОК: График активности -->
+            <div class="glass-card">
+                <div class="section-title" style="margin-top: 0; text-align: center;" data-i18n="activity_title">Активность тикетов</div>
+                <div class="status-tabs" style="justify-content: center; margin-bottom: 16px;" id="activityPeriodTabs">
+                    <button class="status-tab active" data-days="7" onclick="updateActivityChart(7)" data-i18n="period_7d">7 дней</button>
+                    <button class="status-tab" data-days="14" onclick="updateActivityChart(14)" data-i18n="period_14d">14 дней</button>
+                    <button class="status-tab" data-days="30" onclick="updateActivityChart(30)" data-i18n="period_30d">30 дней</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
                 </div>
             </div>
 
@@ -1106,6 +1119,10 @@
                 based_on_ratings: 'На основании',
                 ratings_word: 'оценок',
                 distribution: 'Распределение',
+                activity_title: 'Активность тикетов',
+                period_7d: '7 дней',
+                period_14d: '14 дней',
+                period_30d: '30 дней',
                 close_efficiency: 'Эффективность закрытия',
                 recent_tickets: 'Последние обращения',
                 btn_new_ticket: 'Новый тикет',
@@ -1172,6 +1189,10 @@
                 based_on_ratings: 'Based on',
                 ratings_word: 'ratings',
                 distribution: 'Distribution',
+                activity_title: 'Ticket Activity',
+                period_7d: '7 days',
+                period_14d: '14 days',
+                period_30d: '30 days',
                 close_efficiency: 'Close efficiency',
                 recent_tickets: 'Recent tickets',
                 btn_new_ticket: 'New Ticket',
@@ -1307,9 +1328,15 @@
             localStorage.setItem('metla_lang', lang);
             applyTranslations();
             renderChart(currentChartData);
+            // Перерисовываем график активности при смене языка, если он уже загружен
+            const activeTab = document.querySelector('#activityPeriodTabs .status-tab.active');
+            if (activeTab) {
+                updateActivityChart(parseInt(activeTab.dataset.days));
+            }
         }
 
         let currentChartData = null;
+        let activityChartInstance = null; // Новая переменная для графика активности
 
         // ========== КАСТОМНЫЙ ВЫПАДАЮЩИЙ СПИСОК ==========
         function initCustomSelect() {
@@ -1379,9 +1406,12 @@
             currentPage = 1;
             
             document.querySelectorAll('.status-tab').forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.dataset.status === status) {
-                    tab.classList.add('active');
+                // Не трогаем табы активности, только табы статусов
+                if (tab.parentElement.id === 'statusTabs') {
+                    tab.classList.remove('active');
+                    if (tab.dataset.status === status) {
+                        tab.classList.add('active');
+                    }
                 }
             });
             
@@ -1546,6 +1576,9 @@
                 currentPage = 1;
                 await loadTickets(1, false);
                 
+                // Загружаем график активности по умолчанию (7 дней)
+                await updateActivityChart(7);
+                
                 const loader = document.getElementById('loader');
                 const content = document.getElementById('content');
                 if (loader) loader.classList.add('hidden');
@@ -1569,6 +1602,96 @@
             }
         }
 
+        // ========== НОВАЯ ФУНКЦИЯ: График активности ==========
+        async function updateActivityChart(days) {
+            // Обновляем UI кнопок
+            document.querySelectorAll('#activityPeriodTabs .status-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (parseInt(tab.dataset.days) === days) {
+                    tab.classList.add('active');
+                }
+            });
+
+            try {
+                const data = await apiFetch(`/stats/activity?days=${days}`);
+                renderActivityChart(data);
+            } catch (error) {
+                console.error('Ошибка загрузки активности:', error);
+            }
+        }
+
+        function renderActivityChart(data) {
+            const canvas = document.getElementById('activityChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            if (activityChartInstance) {
+                activityChartInstance.destroy();
+            }
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(0, 240, 200, 0.4)');
+            gradient.addColorStop(1, 'rgba(0, 240, 200, 0.0)');
+
+            activityChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: currentLang === 'ru' ? 'Новые тикеты' : 'New Tickets',
+                        data: data.data,
+                        borderColor: '#00F0C8',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#0B0D17',
+                        pointBorderColor: '#00F0C8',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 // Плавные линии
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(11, 13, 23, 0.95)',
+                            titleColor: '#00F0C8',
+                            bodyColor: '#F0F3FA',
+                            borderColor: 'rgba(0, 240, 200, 0.3)',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: 'Space Grotesk', weight: 'bold' },
+                            bodyFont: { family: 'Space Mono' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#9BA4B5',
+                                font: { family: 'Space Mono', size: 10 },
+                                stepSize: 1
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#9BA4B5',
+                                font: { family: 'Space Mono', size: 10 }
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+        // ====================================================
+
         async function loadTickets(page, append = false) {
             if (isLoadingTickets) return;
             isLoadingTickets = true;
@@ -1583,7 +1706,6 @@
 
             try {
                 const statusParam = currentStatusFilter === 'all' ? '' : `&status=${currentStatusFilter}`;
-                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch вместо голого fetch
                 const data = await apiFetch(`/tickets?page=${page}&limit=10${statusParam}`);
                 
                 renderTickets(data.tickets, append);
@@ -1719,18 +1841,15 @@
             if (conversation) conversation.innerHTML = `<div class="loader">${t('loading_messages')}</div>`;
             if (modal) modal.classList.add('active');
             
-            // Показываем кнопку закрытия только для открытых тикетов
             if (closeBtn) {
                 closeBtn.style.display = 'block';
                 closeBtn.innerText = currentLang === 'ru' ? 'Закрыть тикет' : 'Close Ticket';
             }
             
             try {
-                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch
                 const data = await apiFetch(`/ticket/${ticketId}/messages`);
                 renderConversation(data);
                 
-                // Скрываем кнопку, если тикет уже закрыт
                 if (data.status === 'closed' && closeBtn) {
                     closeBtn.style.display = 'none';
                 }
@@ -1797,7 +1916,7 @@
                 if (response.success) {
                     alert(currentLang === 'ru' ? `✅ Тикет #${ticketId} закрыт.` : `✅ Ticket #${ticketId} closed.`);
                     closeTicketModal();
-                    loadData(); // Обновить статистику
+                    loadData();
                 } else {
                     alert(currentLang === 'ru' ? `❌ Ошибка: ${response.error}` : `❌ Error: ${response.error}`);
                 }
@@ -1883,7 +2002,6 @@
 
                 console.log('[API] Отправка тикета. InitData присутствует:', !!window.Telegram?.WebApp?.initData);
 
-                // ✅ ИСПРАВЛЕНИЕ: Используем apiFetch для отправки
                 const data = await apiFetch(`/ticket/create`, {
                     method: 'POST',
                     body: formData
